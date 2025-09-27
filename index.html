@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fat Loss Calculator - Smart Meal Planner</title>
+<meta name="description" content="智能减脂饮食规划器 - 根据你的宏量营养素目标和热量缺口自动计算食物配比"/>
+<style>
+  :root { 
+    --ink:#0f172a; 
+    --muted:#475569; 
+    --line:#e2e8f0; 
+    --brand:#2563eb; 
+    --bg:#ffffff; 
+    --card:#f8fafc; 
+    --success:#16a34a;
+    --warning:#b45309;
+    --error:#dc2626;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+    color: var(--ink); 
+    background: var(--bg); 
+    margin: 0;
+    padding: 16px;
+    line-height: 1.5;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  h1 { 
+    font-size: 28px; 
+    margin: 0 0 8px; 
+    text-align: center;
+  }
+  
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-size: 16px;
+  }
+  
+  h2 { 
+    font-size: 20px; 
+    margin: 12px 0 8px; 
+  }
+  
+  p, label, li, span { 
+    font-size: 14px; 
+  }
+  
+  .card { 
+    background: var(--card); 
+    border: 1px solid var(--line); 
+    border-radius: 12px; 
+    padding: 20px; 
+    margin-bottom: 20px; 
+  }
+  
+  .grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 16px; 
+  }
+  
+  @media (max-width: 768px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  input, select { 
+    width: 100%; 
+    padding: 12px; 
+    border: 1px solid var(--line); 
+    border-radius: 8px; 
+    font-size: 14px;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  
+  button { 
+    padding: 12px 20px; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .primary { 
+    background: var(--brand); 
+    color: white; 
+  }
+  
+  .primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+  }
+  
+  .secondary {
+    background: #f1f5f9;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  
+  .secondary:hover {
+    background: #e2e8f0;
+  }
+  
+  .muted { 
+    color: var(--muted); 
+  }
+  
+  .kpi { 
+    display: flex; 
+    gap: 16px; 
+    flex-wrap: wrap; 
+    margin: 16px 0;
+  }
+  
+  .kpi div { 
+    background: white; 
+    border: 1px solid var(--line); 
+    border-radius: 12px; 
+    padding: 16px; 
+    min-width: 140px; 
+    flex: 1;
+    text-align: center;
+  }
+  
+  .kpi .num { 
+    font-size: 24px; 
+    font-weight: 700; 
+    color: var(--brand);
+    margin-bottom: 4px;
+  }
+  
+  .groups { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+  }
+  
+  .group { 
+    border: 1px solid var(--line); 
+    border-radius: 12px; 
+    padding: 20px; 
+    background: #fff; 
+  }
+  
+  .group-title { 
+    font-weight: bold; 
+    font-size: 18px; 
+    margin-bottom: 16px; 
+    color: var(--brand); 
+  }
+  
+  .food-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 0; 
+  }
+  
+  .item { 
+    display: flex; 
+    align-items: center; 
+    padding: 16px 0; 
+    border-bottom: 1px solid #f1f5f9;
+    width: 100%;
+  }
+  
+  .item:last-child { 
+    border-bottom: none; 
+  }
+  
+  .item:hover { 
+    background-color: #f8fafc; 
+    margin: 0 -20px; 
+    padding-left: 20px; 
+    padding-right: 20px; 
+    border-radius: 8px;
+  }
+  
+  .checkbox-wrapper { 
+    width: 40px; 
+    flex-shrink: 0; 
+  }
+  
+  .food-content { 
+    flex: 1; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+  }
+  
+  @media (max-width: 768px) {
+    .food-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+  
+  .food-left { 
+    flex: 1; 
+  }
+  
+  .food-right { 
+    text-align: right; 
+    flex-shrink: 0; 
+    margin-left: 20px; 
+  }
+  
+  @media (max-width: 768px) {
+    .food-right {
+      margin-left: 0;
+      text-align: left;
+    }
+  }
+  
+  .food-name { 
+    font-weight: 600; 
+    font-size: 16px; 
+    margin-bottom: 4px; 
+  }
+  
+  .food-macros { 
+    font-size: 14px; 
+    color: var(--muted); 
+  }
+  
+  .tag { 
+    display: inline-block; 
+    padding: 4px 8px; 
+    border-radius: 999px; 
+    border: 1px solid var(--line); 
+    font-size: 12px; 
+    margin-bottom: 4px; 
+    color: var(--muted); 
+    background: #f8fafc;
+  }
+  
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 16px; 
+  }
+  
+  th, td { 
+    border-bottom: 1px solid var(--line); 
+    padding: 12px 8px; 
+    font-size: 14px; 
+    text-align: right; 
+  }
+  
+  th:first-child, td:first-child { 
+    text-align: left; 
+  }
+  
+  th {
+    background: var(--card);
+    font-weight: 600;
+  }
+  
+  .ok { color: var(--success); }
+  .warn { color: var(--warning); }
+  .error { color: var(--error); }
+  
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 768px) {
+    .button-group {
+      flex-direction: column;
+    }
+    
+    .button-group button {
+      width: 100%;
+    }
+  }
+  
+  .radio-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  
+  .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    font-weight: normal;
+  }
+  
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🥗 Fat Loss Calculator</h1>
+  <p class="subtitle">Smart meal planner that automatically calculates food portions to match your macro targets</p>
+
+  <div class="card">
+    <h2>Step 1 - Personal Information</h2>
+    <div class="grid">
+      <div>
+        <label>Sex</label>
+        <select id="sex">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div>
+        <label>Age (years)</label>
+        <input id="age" type="number" value="25" min="10" max="90"/>
+      </div>
+      <div>
+        <label>Height (cm)</label>
+        <input id="height" type="number" value="176" min="120" max="220"/>
+      </div>
+      <div>
+        <label>Weight (kg)</label>
+        <input id="weight" type="number" value="71.5" min="30" max="200" step="0.1"/>
+      </div>
+      <div>
+        <label>Body Fat % (optional)</label>
+        <input id="bf" type="number" placeholder="e.g., 18" min="3" max="60" step="0.1"/>
+      </div>
+      <div>
+        <label>Activity Level</label>
+        <select id="activity">
+          <option value="1.2">Sedentary (1.2)</option>
+          <option value="1.375">Light (1.375)</option>
+          <option value="1.55" selected>Moderate (1.55)</option>
+          <option value="1.725">Active (1.725)</option>
+          <option value="1.9">Very Active (1.9)</option>
+        </select>
+      </div>
+      <div>
+        <label>Calorie Deficit %</label>
+        <input id="deficit" type="number" value="15" min="5" max="35"/>
+      </div>
+    </div>
+    <div class="button-group">
+      <button class="primary" onclick="calcTargets()">Calculate Targets</button>
+      <span class="muted">BMR: Mifflin-St Jeor (switches to Katch-McArdle if BF% provided)</span>
+    </div>
+  </div>
+
+  <div class="card" id="targets" style="display:none;"></div>
+
+  <div class="card">
+    <h2>Step 2 - Macro Distribution</h2>
+    <div class="radio-group">
+      <label><input type="radio" name="mode" value="percent" checked/> By % of target calories</label>
+      <span class="muted">Default 40/30/30</span>
+      <label><input type="radio" name="mode" value="perkg"/> By g/kg (P & F; carbs = remainder)</label>
+    </div>
+    <div id="modePercent" class="grid">
+      <div>
+        <label>Carbohydrates %</label>
+        <input id="pc_c" type="number" value="40" min="0" max="80"/>
+      </div>
+      <div>
+        <label>Protein %</label>
+        <input id="pc_p" type="number" value="30" min="10" max="50"/>
+      </div>
+      <div>
+        <label>Fat %</label>
+        <input id="pc_f" type="number" value="30" min="10" max="50"/>
+      </div>
+    </div>
+    <div id="modePerKg" class="grid" style="display:none;">
+      <div>
+        <label>Protein g/kg</label>
+        <input id="gpk_p" type="number" value="1.6" step="0.1" min="1.0" max="2.5"/>
+      </div>
+      <div>
+        <label>Fat g/kg</label>
+        <input id="gpk_f" type="number" value="0.8" step="0.1" min="0.4" max="1.5"/>
+      </div>
+    </div>
+    <div class="button-group">
+      <button class="primary" onclick="allocMacros()">Allocate Macros</button>
+    </div>
+  </div>
+
+  <div class="card" id="macros" style="display:none;"></div>
+
+  <div class="card">
+    <h2>Step 3 - Select Foods</h2>
+    <p class="muted">Choose foods you'd like to include in your meal plan. The calculator will determine optimal portions.</p>
+    <div class="groups" id="groups"></div>
+    <div class="button-group">
+      <button class="primary" onclick="autoPlan()">🎯 Generate Meal Plan</button>
+      <button class="secondary" onclick="clearPlan()">Clear Plan</button>
+    </div>
+  </div>
+
+  <div class="card" id="plan" style="display:none;"></div>
+
+  <div class="footer">
+    <p>📊 Fat Loss Calculator v1.0 | © 2025 TL2022. All rights reserved.</p>
+    <p>🔬 Developed for nutrition optimization and educational purposes</p>
+    <p>⚠️ <strong>Disclaimer:</strong> This tool is for educational and research purposes only. Always consult qualified healthcare professionals or registered dietitians for personalized nutrition advice. The calculations are estimates and should not replace professional medical guidance.</p>
+    <p class="muted" style="margin-top: 12px;">
+      <small>🔧 Built with passion for health and fitness optimization | 
+      For inquiries or collaboration, please contact the developer</small>
+    </p>
+  </div>
+</div>
+
+<script>
+function round(x,d=0){const p=Math.pow(10,d);return Math.round(x*p)/p;}
+function kcalFrom(p,c,f){return p*4+c*4+f*9;}
+function pct(n,d){return d>0?round(100*n/d,0):0;}
+
+let state={bmr:0,tdee:0,target:0,weight:0,mode:'percent',macros:{P:0,C:0,F:0}};
+
+// Enhanced food database with realistic portion ranges
+const FOOD_DB=[
+  {key:"chicken", name:"Chicken Breast", p:31,c:0, f:3.6, tag:"Protein", group:"Protein", min:50, max:300},
+  {key:"salmon",  name:"Salmon",         p:20,c:0, f:13,  tag:"Protein/Fat", group:"Mixed", min:50, max:250},
+  {key:"egg",     name:"Eggs (whole)",    p:13,c:1.1,f:11, tag:"Protein/Fat", group:"Mixed", min:50, max:200},
+  {key:"yogurt",  name:"Greek Yogurt",   p:10,c:3.6,f:0.4,tag:"Protein", group:"Protein", min:100, max:300},
+  {key:"tofu",    name:"Firm Tofu",      p:15,c:3, f:8,   tag:"Protein/Fat", group:"Mixed", min:50, max:200},
+  {key:"lentils", name:"Cooked Lentils", p:9, c:20,f:0.4, tag:"Carb/Protein", group:"Mixed", min:50, max:200},
+  {key:"rice",    name:"Cooked Rice",    p:2.7,c:28,f:0.3,tag:"Carb", group:"Carb", min:50, max:200},
+  {key:"pasta",   name:"Cooked Pasta",   p:5, c:31,f:1.5, tag:"Carb", group:"Carb", min:50, max:200},
+  {key:"oats",    name:"Dry Oats",       p:17,c:66,f:7,   tag:"Carb/Protein", group:"Carb", min:30, max:100},
+  {key:"bread",   name:"Whole Grain Bread", p:10,c:49,f:4.4, tag:"Carb", group:"Carb", min:50, max:150},
+  {key:"potato",  name:"Sweet Potato",   p:2, c:20,f:0.1, tag:"Carb", group:"Carb", min:100, max:300},
+  {key:"avocado", name:"Avocado",        p:2, c:9, f:15,  tag:"Fat",  group:"Fat", min:30, max:150},
+  {key:"olive",   name:"Olive Oil",      p:0, c:0, f:100, tag:"Fat",  group:"Fat", min:5, max:40},
+  {key:"pb",      name:"Peanut Butter",  p:25,c:20,f:50,  tag:"Fat/Protein", group:"Fat", min:10, max:50},
+  {key:"almond",  name:"Almonds",        p:21,c:22,f:50,  tag:"Fat/Protein", group:"Fat", min:15, max:60},
+  {key:"broccoli",name:"Broccoli",       p:2.8,c:7, f:0.4,tag:"Low-cal veg", group:"Veg", min:100, max:500},
+  {key:"spinach", name:"Spinach",        p:2.9,c:3.6,f:0.4,tag:"Low-cal veg", group:"Veg", min:100, max:400}
+];
+
+function groupFoods(){
+  const groups = [
+    {name: "Protein", desc: "High protein foods"},
+    {name: "Carb", desc: "Carbohydrate sources"}, 
+    {name: "Fat", desc: "Healthy fats"},
+    {name: "Mixed", desc: "Balanced macro foods"},
+    {name: "Veg", desc: "Vegetables & low-cal"}
+  ];
+  const wrap = document.getElementById('groups');
+  wrap.innerHTML = "";
+  
+  groups.forEach(g=>{
+    const box=document.createElement('div'); box.className='group';
+    box.innerHTML = `
+      <div class="group-title">${g.name} <span class="muted" style="font-weight:normal; font-size:14px;">- ${g.desc}</span></div>
+      <div class="food-list" id="grp_${g.name}"></div>
+    `;
+    wrap.appendChild(box);
+  });
+  
+  FOOD_DB.forEach(f=>{
+    const K=kcalFrom(f.p,f.c,f.f);
+    const id="fd_"+f.key;
+    const row=document.createElement('div'); row.className='item';
+    row.innerHTML=`
+      <div class="checkbox-wrapper">
+        <input type="checkbox" id="${id}"/>
+      </div>
+      <div class="food-content">
+        <div class="food-left">
+          <div class="food-name">${f.name}</div>
+          <div class="food-macros">Per 100g: P ${f.p}g • C ${f.c}g • F ${f.f}g • ${Math.round(K)} kcal</div>
+        </div>
+        <div class="food-right">
+          <div class="tag">${f.tag}</div>
+          <div style="font-size: 12px; color: var(--muted);">${f.min}-${f.max}g range</div>
+        </div>
+      </div>`;
+    document.getElementById('grp_'+f.group).appendChild(row);
+  });
+}
+
+// Initialize food groups
+groupFoods();
+
+// Step 1: Calculate targets
+function calcTargets(){
+  const sex=document.getElementById('sex').value;
+  const age=parseFloat(document.getElementById('age').value);
+  const h=parseFloat(document.getElementById('height').value);
+  const w=parseFloat(document.getElementById('weight').value);
+  const bf=parseFloat(document.getElementById('bf').value);
+  const act=parseFloat(document.getElementById('activity').value);
+  const def=parseFloat(document.getElementById('deficit').value);
+  
+  state.weight=w;
+  let bmr=(sex==="male"?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161);
+  let method="Mifflin-St Jeor";
+  if(!Number.isNaN(bf)){bmr=370+21.6*(w*(1-bf/100));method="Katch-McArdle";}
+  const tdee=bmr*act;
+  const target=tdee*(1-def/100);
+  
+  state.bmr=bmr; state.tdee=tdee; state.target=target;
+  
+  const box=document.getElementById('targets'); box.style.display='block';
+  box.innerHTML=`
+    <h2>📊 Your Metabolic Profile</h2>
+    <div class="kpi">
+      <div><div class="num">${round(bmr,0)}</div><div>BMR (${method})</div></div>
+      <div><div class="num">${round(tdee,0)}</div><div>TDEE</div></div>
+      <div><div class="num">${round(target,0)}</div><div>Target Calories</div></div>
+      <div><div class="num">${def}%</div><div>Deficit</div></div>
+    </div>`;
+}
+
+// Step 2: Mode switching
+document.querySelectorAll('input[name="mode"]').forEach(r=>{
+  r.addEventListener('change',e=>{
+    state.mode=e.target.value;
+    document.getElementById('modePercent').style.display = state.mode==='percent'?'grid':'none';
+    document.getElementById('modePerKg').style.display = state.mode==='perkg'?'grid':'none';
+  });
+});
+
+function allocMacros(){
+  if(!state.target){alert("Please calculate targets first.");return;}
+  
+  let P=0,C=0,F=0;
+  if(state.mode==='percent'){
+    let pcC=parseFloat(document.getElementById('pc_c').value);
+    let pcP=parseFloat(document.getElementById('pc_p').value);
+    let pcF=parseFloat(document.getElementById('pc_f').value);
+    const sum=pcC+pcP+pcF;
+    if(sum!==100){ pcC=pcC/sum*100; pcP=pcP/sum*100; pcF=pcF/sum*100; }
+    C=(pcC/100*state.target)/4;
+    P=(pcP/100*state.target)/4;
+    F=(pcF/100*state.target)/9;
+  }else{
+    const gpkP=parseFloat(document.getElementById('gpk_p').value);
+    const gpkF=parseFloat(document.getElementById('gpk_f').value);
+    P=gpkP*state.weight;
+    F=gpkF*state.weight;
+    const used=P*4+F*9;
+    C=Math.max(0,(state.target-used)/4);
+  }
+  
+  state.macros={P,C,F};
+  
+  const box=document.getElementById('macros'); box.style.display='block';
+  box.innerHTML=`
+    <h2>🎯 Your Macro Targets</h2>
+    <div class="kpi">
+      <div><div class="num">${round(P,0)}g</div><div>Protein</div></div>
+      <div><div class="num">${round(C,0)}g</div><div>Carbohydrates</div></div>
+      <div><div class="num">${round(F,0)}g</div><div>Fat</div></div>
+      <div><div class="num">${round(state.target,0)}</div><div>Total Calories</div></div>
+    </div>
+    <p class="muted">Distribution method: <b>${state.mode==='percent'?'Percentage split':'Grams per kg body weight'}</b></p>`;
+}
+
+// Step 3: Food selection and optimization
+function chosenFoods(){
+  const keys=[];
+  FOOD_DB.forEach(f=>{ const el=document.getElementById('fd_'+f.key); if(el && el.checked) keys.push(f.key); });
+  return FOOD_DB.filter(f=>keys.includes(f.key));
+}
+
+function autoPlan(){
+  const picks=chosenFoods();
+  if(picks.length===0){ alert("Please select at least one food."); return; }
+  if(!state.macros.P && !state.macros.C && !state.macros.F){ alert("Please allocate macros first."); return; }
+
+  const TP=state.macros.P, TC=state.macros.C, TF=state.macros.F;
+  const TK=state.target;
+  
+  // Smart initialization based on food types
+  const grams={};
+  picks.forEach(f=>{
+    if(f.group === 'Fat') grams[f.key] = (f.min + f.max) / 4;
+    else if(f.group === 'Protein') grams[f.key] = (f.min + f.max) / 2;
+    else grams[f.key] = (f.min + f.max) / 3;
+  });
+  
+  // Enhanced optimization with multiple weight combinations
+  const maxIter = 600;
+  const tolerance = 3.0;
+  let bestGrams = {...grams};
+  let bestError = Infinity;
+  
+  const weightSets = [
+    {wP: 2.0, wC: 1.5, wF: 2.0, wK: 1.2},
+    {wP: 1.5, wC: 1.0, wF: 1.5, wK: 2.0},
+    {wP: 1.0, wC: 1.0, wF: 1.0, wK: 1.5},
+    {wP: 2.5, wC: 1.0, wF: 2.5, wK: 0.8}
+  ];
+  
+  weightSets.forEach(weights => {
+    const currentGrams = {...grams};
+    const lr = 2.5;
+    
+    for(let iter = 0; iter < maxIter; iter++){
+      let P=0, C=0, F=0, K=0;
+      picks.forEach(f=>{
+        const g = currentGrams[f.key] / 100;
+        P += f.p * g;
+        C += f.c * g; 
+        F += f.f * g;
+        K += kcalFrom(f.p * g, f.c * g, f.f * g);
+      });
+      
+      const eP = P - TP;
+      const eC = C - TC;
+      const eF = F - TF;
+      const eK = K - TK;
+      const totalError = Math.abs(eP) + Math.abs(eC) + Math.abs(eF) + Math.abs(eK)/5;
+      
+      if(totalError < bestError){
+        bestError = totalError;
+        bestGrams = {...currentGrams};
+      }
+      
+      if(totalError < tolerance) break;
+      
+      const adaptiveLr = lr * Math.max(0.1, 1.0 / (1 + iter/150));
+      
+      picks.forEach(f=>{
+        const p = f.p / 100;
+        const c = f.c / 100;
+        const fat = f.f / 100;
+        const kg = 4 * p + 4 * c + 9 * fat;
+        
+        let grad = weights.wP * eP * p + weights.wC * eC * c + weights.wF * eF * fat + weights.wK * eK * kg;
+        currentGrams[f.key] = Math.max(f.min, Math.min(f.max, currentGrams[f.key] - adaptiveLr * grad));
+      });
+    }
+  });
+  
+  Object.assign(grams, bestGrams);
+  
+  // Calculate final results
+  let P=0, C=0, F=0, K=0;
+  picks.forEach(f=>{
+    const g = grams[f.key] / 100;
+    P += f.p * g;
+    C += f.c * g;
+    F += f.f * g;
+    K += kcalFrom(f.p * g, f.c * g, f.f * g);
+  });
+
+  // Render results
+  const rows = picks.map(f=>{
+    const g = grams[f.key] / 100;
+    const p = f.p * g, c = f.c * g, fat = f.f * g, k = kcalFrom(p, c, fat);
+    return `<tr>
+      <td><strong>${f.name}</strong></td>
+      <td>${round(grams[f.key],0)}g</td>
+      <td>${round(k,0)}</td>
+      <td>${round(p,1)}</td>
+      <td>${round(c,1)}</td>
+      <td>${round(fat,1)}</td>
+      <td><span class="tag">${f.tag}</span></td>
+    </tr>`;
+  }).join("");
+  
+  const dP = round(P - TP, 1);
+  const dC = round(C - TC, 1);
+  const dF = round(F - TF, 1);
+  const dK = round(K - TK, 0);
+  
+  const plan = document.getElementById('plan');
+  plan.style.display = 'block';
+  
+  const isExcellent = Math.abs(dP) <= 3 && Math.abs(dC) <= 5 && Math.abs(dF) <= 2 && Math.abs(dK) <= 15;
+  const isGood = Math.abs(dP) <= 8 && Math.abs(dC) <= 15 && Math.abs(dF) <= 5 && Math.abs(dK) <= 30;
+  const resultClass = isExcellent ? 'ok' : (isGood ? 'warn' : 'error');
+  const resultEmoji = isExcellent ? '🎯' : (isGood ? '⚠️' : '❌');
+  
+  plan.innerHTML = `
+    <h2>🍽️ Your Optimized Meal Plan</h2>
+    <div class="kpi">
+      <div><div class="num">${round(K,0)}</div><div>Total Calories</div></div>
+      <div><div class="num">${round(P,1)}g</div><div>Protein</div></div>
+      <div><div class="num">${round(C,1)}g</div><div>Carbohydrates</div></div>
+      <div><div class="num">${round(F,1)}g</div><div>Fat</div></div>
+    </div>
+    <p class="${resultClass}" style="font-weight: 500; font-size: 15px;">
+      ${resultEmoji} <strong>Accuracy vs targets:</strong> 
+      Protein ${dP >= 0 ? '+' : ''}${dP}g, 
+      Carbs ${dC >= 0 ? '+' : ''}${dC}g, 
+      Fat ${dF >= 0 ? '+' : ''}${dF}g, 
+      Calories ${dK >= 0 ? '+' : ''}${dK}kcal
+      ${isExcellent ? ' - Excellent match! 🎉' : isGood ? ' - Good approximation' : ' - Consider different food combinations'}
+    </p>
+    <table>
+      <thead>
+        <tr><th>Food</th><th>Amount</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Type</th></tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr style="font-weight:bold; border-top: 2px solid var(--brand); background: var(--card);">
+          <td><strong>TOTAL</strong></td><td>—</td><td><strong>${round(K,0)}</strong></td>
+          <td><strong>${round(P,1)}g</strong></td><td><strong>${round(C,1)}g</strong></td><td><strong>${round(F,1)}g</strong></td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    ${!isGood ? '<p class="muted" style="margin-top: 16px;"><small>💡 <strong>Tip:</strong> Try selecting foods with different macro profiles to improve the match. Consider adding more carb sources if carbs are low, or protein sources if protein is low.</small></p>' : ''}
+  `;
+}
+
+function clearPlan(){ 
+  document.getElementById('plan').style.display='none'; 
+  document.getElementById('plan').innerHTML=''; 
+}
+</script>
+</body>
+</html>
